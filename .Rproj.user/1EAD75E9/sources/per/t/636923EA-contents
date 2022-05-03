@@ -1,0 +1,238 @@
+---
+title: "Exercise 3 Report"
+author: "Ze Hong Zhou"
+date: "13/10/2021"
+output: 
+  bookdown::pdf_document2: 
+    extra_dependencies: ["amsmath"]
+bibliography: cite.bib
+csl: acm-sig-proceedings.csl
+link-citations: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+# Chi-Squared Tests
+
+A chi-squared test is a statistical test wherein the test statistic is distributed as the chi-squared distribution under the null hypothesis [@wiki2021test]. This report will cover the most common type, Pearson's chi-squared test.  
+&nbsp;  
+
+## The Chi-Squared Distribution Family
+
+The chi-squared distribution family is a family of continuous distributions. This family includes all distributions of the sum of a positive integer number of independent standard normal random variables. The number of random variables summed of a member in this family is its number of degrees of freedom, $k$, the only parameter of chi-squared distributions. This is illustrated in relation \@ref(eq:kdf).
+
+Suppose that for all $i \in [1, k]$, $Z_i \sim N(0, 1)$. Then, 
+
+\begin{equation}
+\sum_{i=1}^{k}(Z_i^2) \sim \chi_k^2 (\#eq:kdf)
+\end{equation}
+
+Where $\chi_k^2$ is the chi-squared distribution with $k$ degrees of freedom.
+
+The probability density function for chi-squared distributions can be seen in figure \@ref(fig:pdf).
+
+![probability density functions for various k. Source: [@wiki2021dist]. (\#fig:pdf)](chisq_dist.png){width=50%}
+
+## Pearson's Chi-Squared Test
+
+Suppose that there are $k$ mutually exclusive events with individual probabilities $p_i$, which sum to 1.
+
+\[
+\sum_{i=1}^{k}(p_i) = 1
+\]
+
+Suppose that $n$ independent trials were taken and the number of times each event occurred ($n_i$) was recorded.
+
+In 1900, Pearson proposed the following test statistic to test a set of hypothesised values for $p_i$ [@wackerly2020mathstat].
+
+\begin{equation}
+X^2 = \sum_{i=1}^{k}\left(\frac{(n_i-np_i)^2}{np_i}\right)
+\end{equation}
+
+Pearson proved that as the number of trials approached infinity, if all $p_i>0$, the distribution of his test statistic approached the chi-squared distribution with $k-l$ degrees of freedom, where $l$ is the number of independent linear restrictions placed on the event probabilities [@wiki2021test, @wackerly2020mathstat]. That is:
+
+\begin{equation}
+\lim_{n \to \infty}(X^2) \sim \chi_{k-1}^2
+\end{equation}
+
+Seven proofs have been given in [@benhamou2018proof]. I wish that I can understand the maths.
+
+A widely accepted rule of thumb of when the chi-squared distribution approximation is appropriate is that the expected value of the number of times that each event occurs is at least 5.  
+&nbsp;
+
+### Example Test
+
+Suppose that we want to test whether the proportion of studying teenagers is the same for both genders or not with the following random sample of teenagers. We sample the same number for each gender. Our null hypothesis is that men and women are equally likely to study and our alternative hypothesis is that gender affects studying probability. We use a 5% significance level.
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{|l||l|l|} \hline
+                 & Men (M)        & Women (F)      \\ 
+                 & $P(M)=0.5$     & $P(F)=0.5$     \\ \hline\hline
+Studying (Y)     & $n_{MY}=3$     & $n_{FY}=27$    \\ 
+$P(Y)=5/12$      & $P(MY)=5/24$   & $P(FY)=5/24$   \\
+                 & $E(n_{MY})=15$ & $E(n_{FY})=15$ \\ \hline
+Not-studying (N) & $n_{MN}=33$    & $n_{FN}=9$     \\
+$P(N)=7/12$      & $P(MN)=7/24$   & $P(FN)=7/24$   \\
+                 & $E(n_{MN})=21$ & $E(n_{FN})=21$ \\ \hline
+\end{tabular}
+\caption{an example for Pearson's chi-squared test. Probabilities and expected values are calculated assuming that the null hypothesis is true.}
+\label{tab:example1}
+\end{center}
+\end{table}
+
+&nbsp;
+
+&nbsp;
+
+In table \@ref(tab:example1), each expected value is at least 5 so Pearson's chi-squared test is appropriate here.
+
+We have three independent linear restrictions placed on the event probabilities:
+
+\begin{equation*}
+\begin{aligned}
+P(M) &= 0.5 = P(MY) + P(MN) \\
+P(F) &= 0.5 = P(FY) + P(FN) \\
+P(Y) &= 5/12 = P(MY) + P(FY)
+\end{aligned}
+\end{equation*}
+
+The remaining two restrictions can be derived from the above three restrictions, so they aren't independent.
+
+\begin{equation*}
+\begin{aligned}
+P(N) &= 7/12 = P(MN) + P(FN)\\
+1 &= P(MY) + P(FY) + P(MN) + P(FN)
+\end{aligned}
+\end{equation*}
+
+Thus, the test statistic is approximately distributed as the chi-squared distribution with $4-3=1$ degree of freedom.
+
+Computing the test statistic gives:
+
+\[
+X^2=\frac{(3-15)^2}{15}+\frac{(27-15)^2}{15}+\frac{(33-21)^2}{21}+\frac{(9-21)^2}{21}=32.91
+\]
+
+Hence, the corresponding two sided p-value is $P(\chi_1^2\geq32.91)=$ `r pchisq(32.91429, 1, lower.tail = FALSE)`. We reject the null hypothesis.  
+&nbsp;
+
+# Fisher's Exact Test
+
+After Pearson built his test, Fisher proposed a statistical test that is accurate and appropriate for low expected values [@wiki2021fisher].
+
+Fisher used the same assumptions as Pearson did in his test but also assumed that the row and column totals do not change accross samples. He then identified cases that are equally as extreme as or more extreme than what was observed in the sample, and added them up to obtain the p-value.
+
+In this approach, defining extremity can be problematic when two sided tests are introduced or multivariate contingency tables are introduced [@wiki2021fisher]. An approach used by the `fisher.test` function in R is to sum the probabilities of the relevant contingency tables that are less than or equal to the probability of the observed contingency table [@statsR].  
+&nbsp;
+
+## Example
+
+We use the same example as the example in the previous chapter. We test the same hypothesis at the same significance level, but using Fisher's exact test method.
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{|l||l|l|} \hline
+                 & Men (M)        & Women (F)      \\ 
+                 & $n_M=36$       & $n_F=36$       \\ \hline\hline
+Studying (Y)     & $n_{MY}=3$     & $n_{FY}=27$    \\ 
+$n_Y=30$         &                &                \\ \hline
+Not-studying (N) & $n_{MN}=33$    & $n_{FN}=9$     \\
+$n_N=42$         &                &                \\ \hline
+\end{tabular}
+\caption{a duplicated example for Fisher's exact test. Probabilities and expected values are calculated assuming that the null hypothesis is true.}
+\label{tab:example2}
+\end{center}
+\end{table}
+
+The probability that $n_{MY}=j$, where $j$ is a positive integer between 0 and 30, follows the distribution Hypergeometric(72, 30, 36) with probability mass function:
+
+\[
+P(n_{MY}=j)=\frac{\binom{30}{j} \cdot \binom{42}{36-j}}{\binom{72}{36}}
+\]
+
+The observed value of $n_{MY}$ is 3. For a two sided test, values of $n_{MY}$ that are equally as extreme or more extreme than this are 0, 1, 2, 3, 27, 28, 29, 30. Inputting these values into the probability mass function and summing them together yields `r 2 * phyper(3, 30, 42, 36)`. We reject the null hypothesis.  
+&nbsp;
+
+## Fisher's Exact Test is Conservative
+
+Some authors have argued that Fisher's exact test is conservative [@wiki2021fisher]. This is because the test statistic used is discrete. For example, the cumulative distribution function may be 3% for a certain level of extremity, but it jumps up to 7% going to the next lower level of extremity. This means that when conducting a hypothesis test with a significance level of 5%, in reality we really are testing with a significance level of 3%.
+
+We test this by producing simulations of the studying experiment. Suppose that we sample $n$ males and $n$ females. The number of studying males and studying females both follow the binomial distribution with success rate $p$ and number of Bernoulli trials $n$: B($n$, $p$). This is used to construct 2x2 contingency tables, which are then used to compute p-values.
+
+We produce 10000 simulations for each of the 4 different combinations of $n \in \{20, 100\}$ and $p \in \{0.2, 0.5\}$ for a total of 40000 simulations. The proportion of simulation tests rejected using significance levels of 1%, 5%, and 10% are shown in the summary below under the eponymous columns for both Fisher's and Pearson's test.
+
+\begin{table}[h]
+\begin{center}
+```{r sim, message = FALSE, warning = FALSE}
+library(tidyverse)
+set.seed(46375058)
+
+# Simulate the number of studying males
+n_MY <- rbinom(40000, rep(c(20, 100), each = 20000),
+               rep(rep(c(0.2, 0.5), times = 2), each = 10000))
+# Simulate the number of studying females
+n_FY <- rbinom(40000, rep(c(20, 100), each = 20000),
+               rep(rep(c(0.2, 0.5), times = 2), each = 10000))
+# Number of people sampled for each gender
+n_gender <- rep(c(20, 100), each = 20000)
+
+# Create 2x2 matrices
+sim <- map(1:40000, ~ matrix(c(n_MY[.x], n_gender[.x]-n_MY[.x],
+                               n_FY[.x], n_gender[.x]-n_FY[.x]),
+                             nrow = 2))
+
+# Compute p-values for both tests
+pearson.stat <- function(m, n) {
+  p <- (m[1] + m[3])/sum(m)
+  ((m[1]-p*n)^2)/(p*n) + ((m[2]-(1-p)*n)^2)/((1-p)*n) +
+    ((m[3]-p*n)^2)/(p*n) + ((m[4]-(1-p)*n)^2)/((1-p)*n)
+}
+
+p_val <- map_dfr(1:40000, ~ data.frame(
+  #compute Fisher's p-value
+  fish = 2 * min(phyper(sim[[.x]][c(1, 3)], sim[[.x]][1] + sim[[.x]][3],
+                 2 * n_gender[.x] - sim[[.x]][1] - sim[[.x]][3], n_gender[.x])), 
+  #compute Pearson's p-value
+      chi = pchisq(pearson.stat(sim[[.x]], n_gender[.x]), 1, lower.tail = FALSE)))
+
+# Replace all over-counting p-values for Fisher p-values with 1; This occurs when n_MY = n_FY
+p_val$fish[p_val$fish > 1] <- 1
+
+# Replace all NaN for Pearson p-values with 1; This occurs when n_MY = n_FY = 0
+p_val$chi[is.na(p_val$chi)] <- 1
+
+# Results table
+result <- tibble(fish = p_val$fish, chi = p_val$chi,
+                 n = rep(c(20, 100), each = 20000),
+                 p = rep(rep(c(0.2, 0.5), times = 2), each = 10000))
+
+# Summary table
+result %>% group_by(n, p) %>% summarise( #compute the proportion rejected at each significance level
+                                        fish0.01 = sum(fish < 0.01)/10000,
+                                        fish0.05 = sum(fish < 0.05)/10000,
+                                        fish0.1 = sum(fish < 0.1)/10000,
+                                        chi0.01 = sum(chi < 0.01)/10000,
+                                        chi0.05 = sum(chi < 0.05)/10000,
+                                        chi0.1 = sum(chi < 0.1)/10000) %>%
+  knitr::kable(format = "latex",
+               col.names = c("n", "p",
+                             "Fisher 1%SL", "Fisher 5%SL", "Fisher 10%SL",
+                             "Pearson 1%SL", "Pearson 5%SL", "Pearson 10%SL"))
+```
+\caption{a simulation summary table.}
+\label{tab:sim}
+\end{center}
+\end{table}
+
+This experiment provides evidence that Fisher's exact test is indeed conservative since the actual rejection rate is likely to be less than the significance level set. In contrast, Pearson's chi-squared test is quite accurate even for low $n$ and $p$.  
+&nbsp;
+
+# References
+
+<div id="refs"></div>  
+&nbsp;
+
+# This assignment was way too time consuming :(
